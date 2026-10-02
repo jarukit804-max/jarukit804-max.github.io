@@ -1,31 +1,43 @@
 <!DOCTYPE html>
 <html lang="th">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>แจ้งเหตุ FIXED V4 | Hatyai Rescue</title>
+<title>แจ้งเหตุ FIXED V5 | Hatyai Rescue</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>body{font-family:'Prompt',sans-serif}</style>
 </head>
 <body class="bg-gradient-to-b from-red-50 to-white min-h-screen">
 <header class="bg-white shadow p-3 flex justify-between items-center">
-<div><h1 class="font-bold text-red-600 text-sm">🚨 แจ้งเหตุ FIXED V4</h1><p class="text-[10px] text-slate-500">ไม่ใช้รูป ไม่ใช้ orderBy - ส่งได้ชัวร์</p><p id="statusBar" class="text-[10px] text-emerald-600">✅ พร้อม</p></div>
+<div><h1 class="font-bold text-red-600 text-sm">🚨 แจ้งเหตุกู้ภัยหาดใหญ่ 1163</h1><p class="text-[10px] text-slate-500">FIXED V5 - Timeout + REST fallback | GPS พร้อม</p><p id="statusBar" class="text-[10px] text-emerald-600">✅ พร้อมส่ง</p></div>
 <a href="staff.html" class="bg-slate-900 text-white px-3 py-1 rounded-full text-[10px]">ศูนย์บัญชาการ</a>
 </header>
 <main class="max-w-md mx-auto p-3">
 <div class="bg-white rounded-2xl shadow p-4">
 <form id="rescueForm" class="space-y-3">
-<input id="name" required placeholder="ชื่อ *" class="w-full p-3 bg-slate-50 border rounded-xl">
-<input id="phone" required placeholder="เบอร์ *" class="w-full p-3 bg-slate-50 border rounded-xl">
-<textarea id="detail" required rows="3" placeholder="เช่น จมน้ำ น้ำท่วม" class="w-full p-3 bg-slate-50 border rounded-xl" oninput="updateAI()">จมน้ำ หมดสติ</textarea>
-<div class="bg-purple-50 border rounded-xl p-2 text-[11px]"><span id="aiBadge">🤖 AI</span><div id="aiBox" class="text-[10px]">พิมพ์เพื่อวิเคราะห์</div></div>
+<input id="name" required placeholder="ชื่อ * เช่น เจียม" class="w-full p-3 bg-slate-50 border rounded-xl" value="เจียม">
+<input id="phone" required placeholder="เบอร์ * เช่น 07435262" class="w-full p-3 bg-slate-50 border rounded-xl" value="07435262">
+<textarea id="detail" required rows="3" placeholder="รายละเอียด เช่น น้ำท่วม" class="w-full p-3 bg-slate-50 border rounded-xl" oninput="updateAI()">น้ำท่วม</textarea>
+<div class="bg-purple-50 border rounded-xl p-2 text-[11px]"><span id="aiBadge">🤖 AI</span><div id="aiBox" class="text-[10px]">-</div></div>
 <div><button type="button" onclick="getGPS()" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold text-sm">📍 ดึงพิกัด GPS</button><p id="gpsStatus" class="text-[10px] text-center mt-1 text-red-500">ยังไม่ได้ดึง GPS</p></div>
+<label class="flex gap-2 text-[10px]"><input type="checkbox" checked required> ยินยอม PDPA</label>
 <button type="submit" id="submitBtn" class="w-full bg-red-600 text-white p-4 rounded-xl font-bold">🚀 ส่งขอความช่วยเหลือ</button>
-<div id="debugBox" class="bg-slate-50 border rounded-xl p-2 text-[10px] mt-2"><b>Debug:</b> <span id="debugMsg">พร้อม</span></div>
+<div class="space-y-2">
+<div id="debugBox" class="bg-slate-50 border rounded-xl p-2 text-[10px]"><b>Debug SDK:</b> <span id="debugMsg">พร้อม</span></div>
+<div id="debugRest" class="bg-blue-50 border border-blue-200 rounded-xl p-2 text-[10px] hidden"><b>Debug REST:</b> <span id="restMsg">-</span></div>
+<div id="errorBox" class="bg-red-50 border border-red-200 rounded-xl p-2 text-[10px] hidden"><b>❌ Error:</b> <span id="errorMsg">-</span><pre id="errorDetail" class="mt-1 text-[9px] whitespace-pre-wrap"></pre></div>
+</div>
 </form>
+<div class="mt-4 grid grid-cols-3 gap-2 text-center text-[10px]">
+<a href="tel:1163" class="bg-red-600 text-white p-2 rounded-xl font-bold">🚑 1163</a>
+<a href="tel:074350955" class="bg-slate-900 text-white p-2 rounded-xl">📞 074-350955</a>
+<a href="tel:1669" class="bg-emerald-600 text-white p-2 rounded-xl">🏥 1669</a>
+</div>
+<button onclick="testFirestore()" class="mt-3 w-full bg-slate-100 p-2 rounded-xl text-[10px]">🧪 ทดสอบเชื่อมต่อ Firestore (ไม่ส่งเคส)</button>
 </div>
 </main>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyCVzC5QZvu0piiXC7pdkstfAVl7-yLYrRs",
   authDomain: "hatyai-rescue.firebaseapp.com",
@@ -36,40 +48,169 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
 let lat=null,lng=null;
 window.getGPS=()=>{
   document.getElementById('gpsStatus').innerText='⏳ ดึง GPS...';
-  navigator.geolocation.getCurrentPosition(p=>{ lat=p.coords.latitude; lng=p.coords.longitude; document.getElementById('gpsStatus').innerHTML=`✅ ${lat.toFixed(6)}, ${lng.toFixed(6)}`; document.getElementById('debugMsg').innerText='GPS: '+lat+','+lng; },e=>{ document.getElementById('gpsStatus').innerText='❌ '+e.message; },{enableHighAccuracy:true});
+  navigator.geolocation.getCurrentPosition(p=>{
+    lat=p.coords.latitude; lng=p.coords.longitude;
+    document.getElementById('gpsStatus').innerHTML=`✅ ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    document.getElementById('debugMsg').innerText='GPS: '+lat+','+lng;
+  },e=>{ document.getElementById('gpsStatus').innerText='❌ '+e.message; }, {enableHighAccuracy:true, timeout:10000});
 };
 function aiAnalyze(t){
   const s=t.toLowerCase(); let score=0;
   if(s.match(/หมดสติ|ไม่หายใจ/)) score+=100;
   if(s.match(/จมน้ำ|ไฟดูด/)) score+=90;
+  if(s.match(/น้ำท่วม/)) score+=50;
   if(score>=70) return {label:'แดง - วิกฤต', triage:'🔴', level:3, score};
   if(score>=35) return {label:'เหลือง - ปานกลาง', triage:'🟡', level:2, score};
   return {label:'เขียว - เล็กน้อย', triage:'🟢', level:1, score};
 }
 window.updateAI=()=>{
   const ai=aiAnalyze(document.getElementById('detail').value);
-  document.getElementById('aiBadge').innerText=`${ai.triage} ${ai.label}`;
-  document.getElementById('aiBox').innerText=`Score ${ai.score}`;
+  document.getElementById('aiBadge').innerText=`${ai.triage} ${ai.label} (${ai.score})`;
+  document.getElementById('aiBox').innerText=`อาการ: ${ai.label}`;
 };
 updateAI();
-document.getElementById('rescueForm').addEventListener('submit',async e=>{
-  e.preventDefault();
-  if(lat===null){ alert('กด GPS ก่อน'); return; }
-  const btn=document.getElementById('submitBtn'); btn.disabled=true; btn.innerText='⏳ ส่ง...';
-  document.getElementById('debugMsg').innerText='ส่งไป Firestore...';
+
+function timeoutPromise(promise, ms, msg){
+  let timeoutId;
+  const timeout = new Promise((_, reject)=>{
+    timeoutId = setTimeout(()=> reject(new Error(msg)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(()=> clearTimeout(timeoutId));
+}
+
+async function sendViaREST(docData){
+  const restMsg=document.getElementById('restMsg');
+  const debugRest=document.getElementById('debugRest');
+  debugRest.classList.remove('hidden');
+  restMsg.innerText='กำลังส่งผ่าน REST API...';
+  try{
+    // Firestore REST API - create document
+    const url = `https://firestore.googleapis.com/v1/projects/hatyai-rescue/databases/(default)/documents/cases`;
+    const payload = {
+      fields: {
+        id: {stringValue: docData.id},
+        name: {stringValue: docData.name},
+        phone: {stringValue: docData.phone},
+        detail: {stringValue: docData.detail},
+        lat: {doubleValue: docData.lat},
+        lng: {doubleValue: docData.lng},
+        priority: {integerValue: String(docData.priority)},
+        priorityLabel: {stringValue: docData.priorityLabel||''},
+        status: {stringValue: docData.status},
+        timestamp: {integerValue: String(docData.timestamp)},
+        logTime: {stringValue: docData.logTime},
+        source: {stringValue: 'rest_fallback_v5'}
+      }
+    };
+    const res = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+    const data = await res.json();
+    if(!res.ok) throw new Error('REST '+res.status+' '+JSON.stringify(data).slice(0,500));
+    restMsg.innerText='✅ REST สำเร็จ: '+ (data.name||'ok');
+    return data;
+  }catch(e){
+    restMsg.innerText='❌ REST ล้มเหลว: '+e.message;
+    throw e;
+  }
+}
+
+window.testFirestore=async()=>{
+  const debug=document.getElementById('debugMsg');
+  debug.innerText='ทดสอบเชื่อมต่อ...';
   try{
     const now=Date.now();
-    const docData={ id:'CASE-'+now.toString().slice(-6), name:document.getElementById('name').value, phone:document.getElementById('phone').value, detail:document.getElementById('detail').value, ai:aiAnalyze(document.getElementById('detail').value), priority:aiAnalyze(document.getElementById('detail').value).level, lat:Number(lat), lng:Number(lng), status:'รอช่วยเหลือ', timestamp:now, createdAt:serverTimestamp(), logTime:new Date().toLocaleString('th-TH') };
-    const ref=await addDoc(collection(db,'cases'), docData);
-    try{ await addDoc(collection(db,'logs'), docData); }catch(_){}
-    document.getElementById('debugMsg').innerText='✅ สำเร็จ ID:'+ref.id;
-    alert('✅ ส่งสำเร็จ! '+docData.id);
+    const testDoc={ id:'TEST-CONN-'+now.toString().slice(-4), name:'ทดสอบเชื่อมต่อ', phone:'0000000000', detail:'ทดสอบการเชื่อมต่อ Firestore', lat:7.008, lng:100.4747, priority:1, timestamp:now, logTime:new Date().toLocaleString('th-TH'), status:'ทดสอบ' };
+    const p = addDoc(collection(db,'cases'), testDoc);
+    const ref = await timeoutPromise(p, 8000, 'SDK Timeout 8s - Firestore ไม่ตอบสนอง');
+    debug.innerText='✅ เชื่อมต่อสำเร็จ ID:'+ref.id;
+    alert('✅ Firestore เชื่อมต่อได้: '+ref.id);
+  }catch(e){
+    debug.innerText='❌ ทดสอบล้มเหลว: '+e.message;
+    document.getElementById('errorBox').classList.remove('hidden');
+    document.getElementById('errorMsg').innerText=e.message;
+    document.getElementById('errorDetail').innerText=(e.code||'')+'\n'+(e.stack||'').slice(0,1000);
+  }
+};
+
+document.getElementById('rescueForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const debug=document.getElementById('debugMsg');
+  const errorBox=document.getElementById('errorBox');
+  const errorMsg=document.getElementById('errorMsg');
+  const errorDetail=document.getElementById('errorDetail');
+  const restBox=document.getElementById('debugRest');
+  errorBox.classList.add('hidden'); restBox.classList.add('hidden');
+  
+  if(lat===null){ alert('กด GPS ก่อน'); return; }
+  const btn=document.getElementById('submitBtn'); btn.disabled=true; btn.innerText='⏳ กำลังส่ง...';
+  debug.innerText='กำลังส่งผ่าน SDK...';
+  
+  try{
+    const now=Date.now();
+    const ai=aiAnalyze(document.getElementById('detail').value);
+    const docData={
+      id:'CASE-'+now.toString().slice(-6),
+      name:document.getElementById('name').value.trim(),
+      phone:document.getElementById('phone').value.trim(),
+      detail:document.getElementById('detail').value.trim(),
+      ai, priority:ai.level, priorityLabel:ai.label,
+      lat:Number(lat), lng:Number(lng),
+      status:'รอช่วยเหลือ',
+      timestamp:now,
+      createdAt:serverTimestamp(),
+      logTime:new Date().toLocaleString('th-TH'),
+      source:'public_v5_sdk'
+    };
+    console.log('Sending SDK:', docData);
+    
+    let ref;
+    try{
+      const sdkPromise = addDoc(collection(db,'cases'), docData);
+      ref = await timeoutPromise(sdkPromise, 10000, 'SDK ค้างเกิน 10 วินาที - จะลอง REST');
+      debug.innerText='✅ SDK สำเร็จ ID:'+ref.id;
+    }catch(sdkErr){
+      console.warn('SDK failed, trying REST', sdkErr);
+      debug.innerText='⚠️ SDK ล้มเหลว: '+sdkErr.message+' - ลอง REST...';
+      errorBox.classList.remove('hidden');
+      errorMsg.innerText='SDK: '+sdkErr.message;
+      errorDetail.innerText=(sdkErr.code||'')+'\n'+sdkErr.stack?.slice(0,800);
+      
+      // Fallback to REST
+      try{
+        const restData = await sendViaREST(docData);
+        debug.innerText='✅ REST สำเร็จแทน!';
+        alert('✅ ส่งสำเร็จผ่าน REST!\n'+docData.id+'\nศูนย์ได้รับแล้ว');
+        e.target.reset(); lat=null; document.getElementById('gpsStatus').innerText='ยังไม่ได้ดึง GPS'; updateAI();
+        btn.disabled=false; btn.innerText='🚀 ส่งขอความช่วยเหลือ';
+        return;
+      }catch(restErr){
+        throw new Error('SDK ล้มเหลว: '+sdkErr.message+' | REST ล้มเหลว: '+restErr.message);
+      }
+    }
+    
+    // Try logs (optional)
+    try{ await addDoc(collection(db,'logs'), docData); debug.innerText+=' + logs OK'; }catch(_){ debug.innerText+=' (logs ข้าม)'; }
+    
+    alert('✅ ส่งสำเร็จ!\n'+ai.triage+' '+ai.label+'\nรหัส: '+docData.id);
     e.target.reset(); lat=null; document.getElementById('gpsStatus').innerText='ยังไม่ได้ดึง GPS'; updateAI();
-  }catch(err){ document.getElementById('debugMsg').innerText='❌ '+err.code+' '+err.message; alert('ส่งไม่สำเร็จ: '+err.message); }
-  finally{ btn.disabled=false; btn.innerText='🚀 ส่งขอความช่วยเหลือ'; }
+    
+  }catch(err){
+    console.error(err);
+    debug.innerText='❌ ล้มเหลว: '+err.message;
+    errorBox.classList.remove('hidden');
+    errorMsg.innerText=err.message;
+    errorDetail.innerText=(err.code||'no-code')+'\n'+(err.stack||'').slice(0,1000);
+    if(err.message.includes('permission-denied') || err.code==='permission-denied'){
+      alert('❌ Permission Denied!\n\nไปที่:\nhttps://console.firebase.google.com/project/hatyai-rescue/firestore/rules\n\nวางกฎนี้แล้ว Publish:\nrules_version = \'2\';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read, write: if true;\n    }\n  }\n}\n\n(ชั่วคราวเพื่อทดสอบ แล้วค่อยเปลี่ยนกลับ)');
+    }else{
+      alert('❌ ส่งไม่สำเร็จ: '+err.message+'\n\nเปิด F12 > Console ดูรายละเอียด');
+    }
+  }finally{
+    btn.disabled=false; btn.innerText='🚀 ส่งขอความช่วยเหลือ';
+  }
 });
 </script>
 </body>
