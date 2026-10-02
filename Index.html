@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="th">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>แจ้งเหตุ กู้ภัยหาดใหญ่ 1163 - บันทึก พ.ศ.</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap');body{font-family:'Prompt',sans-serif}</style>
+</head>
+<body class="bg-gradient-to-b from-red-50 to-white min-h-screen">
+<header class="bg-white shadow p-3 flex justify-between items-center sticky top-0 z-10">
+<div>
+<h1 class="font-bold text-red-600 text-sm">🚨 แจ้งเหตุกู้ภัยหาดใหญ่ 1163</h1>
+<p class="text-[10px] text-slate-500">ระบบบันทึกวันที่ พ.ศ. + เวลาออนไลน์ อัตโนมัติ</p>
+<p id="currentDateTime" class="text-[10px] text-blue-600 font-bold"></p>
+</div>
+
+</header>
+<main class="max-w-md mx-auto p-3">
+<div class="bg-white rounded-2xl shadow p-4">
+<form id="rescueForm" class="space-y-3">
+<input id="name" required placeholder="ชื่อผู้ประสบภัย * เช่น เจียม" class="w-full p-3 bg-slate-50 border rounded-xl">
+<input id="phone" type="tel" required placeholder="เบอร์โทร * เช่น 07435262" class="w-full p-3 bg-slate-50 border rounded-xl">
+<textarea id="detail" required rows="3" placeholder="รายละเอียด เช่น น้ำท่วม จมน้ำ หมดสติ" class="w-full p-3 bg-slate-50 border rounded-xl" oninput="updateAI()"></textarea>
+<div class="bg-purple-50 border rounded-xl p-2 text-[11px]"><span id="aiBadge">🤖 AI: รอวิเคราะห์</span><div id="aiBox" class="text-[10px] mt-1">พิมพ์อาการ</div></div>
+<div class="bg-blue-50 border border-blue-200 rounded-xl p-2 text-[10px]">
+<div class="font-bold text-blue-800">📅 ระบบจะบันทึกอัตโนมัติ:</div>
+<div id="previewDate" class="mt-1 text-slate-600">-</div>
+</div>
+<div><button type="button" onclick="getGPS()" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold text-sm">📍 ดึงพิกัด GPS</button><p id="gpsStatus" class="text-[10px] text-center mt-1 text-red-500">ยังไม่ได้ดึง GPS</p></div>
+<label class="flex gap-2 text-[10px]"><input type="checkbox" checked required> ยินยอม PDPA</label>
+<button type="submit" id="submitBtn" class="w-full bg-red-600 text-white p-4 rounded-xl font-bold">🚀 ส่งขอความช่วยเหลือ</button>
+<div id="debugBox" class="bg-slate-50 border rounded-xl p-2 text-[10px] mt-2"><b>Debug:</b> <span id="debugMsg">พร้อม</span></div>
+</form>
+<div class="mt-4 grid grid-cols-3 gap-2 text-center text-[10px]">
+<a href="tel:1163" class="bg-red-600 text-white p-2 rounded-xl font-bold">🚑 1163</a>
+<a href="tel:074350955" class="bg-slate-900 text-white p-2 rounded-xl">📞 074-350955</a>
+<a href="tel:1669" class="bg-emerald-600 text-white p-2 rounded-xl">🏥 1669</a>
+</div>
+</div>
+</main>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCVzC5QZvu0piiXC7pdkstfAVl7-yLYrRs",
+  authDomain: "hatyai-rescue.firebaseapp.com",
+  projectId: "hatyai-rescue",
+  storageBucket: "hatyai-rescue.firebasestorage.app",
+  messagingSenderId: "489517472133",
+  appId: "1:489517472133:web:bf6769bbd62f312cbd0cec"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+
+// === ระบบวันที่ พ.ศ. ไทย + เวลาออนไลน์ ===
+function getThaiDateTime() {
+  const now = new Date();
+  const beYear = now.getFullYear() + 543;
+  const months = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  const monthsShort = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  
+  const day = now.getDate();
+  const month = now.getMonth();
+  const yearBE = beYear;
+  const hours = String(now.getHours()).padStart(2,'0');
+  const mins = String(now.getMinutes()).padStart(2,'0');
+  const secs = String(now.getSeconds()).padStart(2,'0');
+  
+  return {
+    now: now,
+    timestamp: now.getTime(),
+    iso: now.toISOString(),
+    beYear: yearBE,
+    // วันที่แบบไทยเต็ม
+    thaiFull: `${day} ${months[month]} ${yearBE}`,
+    // วันที่แบบย่อ พ.ศ.
+    thaiShort: `${day} ${monthsShort[month]} ${yearBE}`,
+    // วันที่แบบตัวเลข พ.ศ. 02/10/2569
+    dateBE: `${String(day).padStart(2,'0')}/${String(month+1).padStart(2,'0')}/${yearBE}`,
+    // เวลา
+    time: `${hours}:${mins}:${secs}`,
+    timeWithDate: `${String(day).padStart(2,'0')}/${String(month+1).padStart(2,'0')}/${yearBE} ${hours}:${mins}:${secs}`,
+    // Log แบบเต็ม
+    logTime: `${day} ${months[month]} ${yearBE} เวลา ${hours}:${mins}:${secs} น.`,
+    logTimeShort: `${String(day).padStart(2,'0')}/${String(month+1).padStart(2,'0')}/${yearBE} ${hours}:${mins}`,
+    // สำหรับระบบออนไลน์
+    onlineDate: now.toLocaleDateString('th-TH', {year:'numeric', month:'long', day:'numeric'}),
+    onlineTime: now.toLocaleTimeString('th-TH'),
+    onlineDateTime: now.toLocaleString('th-TH'),
+    // วันในสัปดาห์
+    dayName: now.toLocaleDateString('th-TH', {weekday:'long'}),
+    // แยกเก็บ
+    day: day,
+    month: month+1,
+    monthName: months[month],
+    monthShort: monthsShort[month],
+    yearAD: now.getFullYear(),
+    yearBE: yearBE,
+    hours: hours,
+    minutes: mins,
+    seconds: secs
+  };
+}
+
+
+let lat=null,lng=null;
+
+// แสดงเวลาปัจจุบันแบบ Realtime
+function updateCurrentTime(){
+  const dt = getThaiDateTime();
+  document.getElementById('currentDateTime').innerText = `📅 ${dt.thaiShort} | ⏰ ${dt.time} | ${dt.dayName}`;
+  document.getElementById('previewDate').innerHTML = `
+    วันที่: ${dt.thaiFull} (พ.ศ. ${dt.beYear})<br>
+    เวลา: ${dt.time} น.<br>
+    ระบบ: ${dt.dateBE} ${dt.time}<br>
+    ออนไลน์: ${dt.onlineDateTime}
+  `;
+}
+setInterval(updateCurrentTime, 1000);
+updateCurrentTime();
+
+window.getGPS=()=>{
+  document.getElementById('gpsStatus').innerText='⏳ ดึง GPS...';
+  navigator.geolocation.getCurrentPosition(p=>{
+    lat=p.coords.latitude; lng=p.coords.longitude;
+    document.getElementById('gpsStatus').innerHTML=`✅ ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    document.getElementById('debugMsg').innerText=`GPS: ${lat},${lng}`;
+  },e=>{ document.getElementById('gpsStatus').innerText='❌ '+e.message; },{enableHighAccuracy:true});
+};
+
+function aiAnalyze(t){
+  const s=t.toLowerCase(); let score=0;
+  if(s.match(/หมดสติ|ไม่หายใจ/)) score+=100;
+  if(s.match(/จมน้ำ|ไฟดูด/)) score+=90;
+  if(s.match(/หายใจไม่ออก|แน่นหน้าอก/)) score+=80;
+  if(s.match(/เลือดออก|ชัก/)) score+=75;
+  if(s.match(/ติดเตียง/)) score+=70;
+  if(s.match(/น้ำท่วม/)) score+=50;
+  if(score>=70) return {label:'แดง - วิกฤต', triage:'🔴', level:3, score};
+  if(score>=35) return {label:'เหลือง - ปานกลาง', triage:'🟡', level:2, score};
+  return {label:'เขียว - เล็กน้อย', triage:'🟢', level:1, score};
+}
+window.updateAI=()=>{
+  const ai=aiAnalyze(document.getElementById('detail').value);
+  document.getElementById('aiBadge').innerText=`${ai.triage} ${ai.label} (${ai.score})`;
+};
+
+document.getElementById('rescueForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  if(lat===null){ alert('กด GPS ก่อน'); return; }
+  const btn=document.getElementById('submitBtn'); btn.disabled=true; btn.innerText='⏳ กำลังส่ง...';
+  const debug=document.getElementById('debugMsg');
+  debug.innerText='กำลังส่ง...';
+  
+  try{
+    const dt = getThaiDateTime();
+    const ai = aiAnalyze(document.getElementById('detail').value);
+    const now = dt.timestamp;
+    
+    const docData = {
+      id: 'CASE-'+now.toString().slice(-6),
+      name: document.getElementById('name').value.trim(),
+      phone: document.getElementById('phone').value.trim(),
+      detail: document.getElementById('detail').value.trim(),
+      ai, priority: ai.level, priorityLabel: ai.label,
+      lat: Number(lat), lng: Number(lng),
+      status: 'รอช่วยเหลือ',
+      
+      // === ระบบวันที่ พ.ศ. ไทย ===
+      timestamp: now,
+      createdAt: serverTimestamp(),
+      
+      // วันที่ พ.ศ. เต็มรูปแบบ
+      dateBE: dt.dateBE, // 02/10/2569
+      timeBE: dt.time, // 23:19:59
+      dateTimeBE: dt.timeWithDate, // 02/10/2569 23:19:59
+      thaiFull: dt.thaiFull, // 2 ตุลาคม 2569
+      thaiShort: dt.thaiShort, // 2 ต.ค. 2569
+      logTime: dt.logTime, // 2 ตุลาคม 2569 เวลา 23:19:59 น.
+      logTimeShort: dt.logTimeShort, // 02/10/2569 23:19
+      
+      // แยกส่วน
+      day: dt.day,
+      month: dt.month,
+      monthName: dt.monthName,
+      monthShort: dt.monthShort,
+      yearAD: dt.yearAD,
+      yearBE: dt.yearBE,
+      dayName: dt.dayName,
+      hours: dt.hours,
+      minutes: dt.minutes,
+      seconds: dt.seconds,
+      
+      // ระบบออนไลน์
+      onlineDate: dt.onlineDate,
+      onlineTime: dt.onlineTime,
+      onlineDateTime: dt.onlineDateTime,
+      iso: dt.iso,
+      
+      // สำหรับค้นหา
+      dateKey: `${dt.yearBE}-${String(dt.month).padStart(2,'0')}-${String(dt.day).padStart(2,'0')}`,
+      monthKey: `${dt.yearBE}-${String(dt.month).padStart(2,'0')}`,
+      
+      source: 'public_thai_be_v1'
+    };
+    
+    console.log('Sending with Thai BE date:', docData);
+    debug.innerText='ส่ง Firestore: '+dt.logTimeShort;
+    
+    const ref1 = await addDoc(collection(db,'cases'), docData);
+    try{ await addDoc(collection(db,'logs'), docData); }catch(_ ){}
+    
+    debug.innerText='✅ สำเร็จ: '+ref1.id+' | '+dt.logTimeShort;
+    alert(`✅ ส่งสำเร็จ!\n\n${ai.triage} ${ai.label}\nรหัส: ${docData.id}\nวันที่: ${dt.thaiShort} ${dt.time} น.\n\nศูนย์ได้รับแล้ว`);
+    e.target.reset(); lat=null; document.getElementById('gpsStatus').innerText='ยังไม่ได้ดึง GPS'; updateAI(); updateCurrentTime();
+  }catch(err){
+    console.error(err);
+    debug.innerText='❌ '+err.code+' '+err.message;
+    alert('ส่งไม่สำเร็จ: '+err.message);
+  }finally{
+    btn.disabled=false; btn.innerText='🚀 ส่งขอความช่วยเหลือ';
+  }
+});
+</script>
+</body>
+</html>
