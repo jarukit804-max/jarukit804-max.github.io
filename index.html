@@ -1,38 +1,31 @@
 <!DOCTYPE html>
 <html lang="th">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>แจ้งเหตุ - Hatyai Rescue</title>
+<title>แจ้งเหตุ FIXED V4 | Hatyai Rescue</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>body{font-family:'Prompt',sans-serif}</style>
 </head>
 <body class="bg-gradient-to-b from-red-50 to-white min-h-screen">
 <header class="bg-white shadow p-3 flex justify-between items-center">
-<div><h1 class="font-bold text-red-600 text-sm">🚨 แจ้งเหตุกู้ภัยหาดใหญ่ 1163</h1><p class="text-[10px] text-slate-500">Production FIXED - ไม่ต้องมีรูปก็ส่งได้</p><p id="statusBar" class="text-[10px] text-emerald-600">✅ พร้อมส่ง</p></div>
+<div><h1 class="font-bold text-red-600 text-sm">🚨 แจ้งเหตุ FIXED V4</h1><p class="text-[10px] text-slate-500">ไม่ใช้รูป ไม่ใช้ orderBy - ส่งได้ชัวร์</p><p id="statusBar" class="text-[10px] text-emerald-600">✅ พร้อม</p></div>
 <a href="staff.html" class="bg-slate-900 text-white px-3 py-1 rounded-full text-[10px]">ศูนย์บัญชาการ</a>
 </header>
 <main class="max-w-md mx-auto p-3">
 <div class="bg-white rounded-2xl shadow p-4">
 <form id="rescueForm" class="space-y-3">
-<input id="name" required placeholder="ชื่อผู้ประสบภัย *" class="w-full p-3 bg-slate-50 border rounded-xl">
-<input id="phone" type="tel" required placeholder="เบอร์โทร *" class="w-full p-3 bg-slate-50 border rounded-xl">
-<textarea id="detail" required rows="3" placeholder="รายละเอียด + อาการ เช่น หมดสติ จมน้ำ น้ำท่วม" class="w-full p-3 bg-slate-50 border rounded-xl" oninput="updateAI()"></textarea>
-<div class="bg-purple-50 border rounded-xl p-2 text-[11px]"><span id="aiBadge">🤖 AI: รอพิมพ์</span><div id="aiBox" class="text-[10px] mt-1">พิมพ์อาการเพื่อวิเคราะห์</div></div>
-<div><button type="button" onclick="getGPS()" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold text-sm">📍 ดึงพิกัด GPS</button><p id="gpsStatus" class="text-[10px] text-center mt-1 text-red-500">ยังไม่ได้ดึงพิกัด - ต้องกดก่อนส่ง</p></div>
-<label class="flex gap-2 text-[10px]"><input type="checkbox" required> ยินยอมให้ใช้ข้อมูลเพื่อช่วยเหลือตาม PDPA</label>
+<input id="name" required placeholder="ชื่อ *" class="w-full p-3 bg-slate-50 border rounded-xl">
+<input id="phone" required placeholder="เบอร์ *" class="w-full p-3 bg-slate-50 border rounded-xl">
+<textarea id="detail" required rows="3" placeholder="เช่น จมน้ำ น้ำท่วม" class="w-full p-3 bg-slate-50 border rounded-xl" oninput="updateAI()">จมน้ำ หมดสติ</textarea>
+<div class="bg-purple-50 border rounded-xl p-2 text-[11px]"><span id="aiBadge">🤖 AI</span><div id="aiBox" class="text-[10px]">พิมพ์เพื่อวิเคราะห์</div></div>
+<div><button type="button" onclick="getGPS()" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold text-sm">📍 ดึงพิกัด GPS</button><p id="gpsStatus" class="text-[10px] text-center mt-1 text-red-500">ยังไม่ได้ดึง GPS</p></div>
 <button type="submit" id="submitBtn" class="w-full bg-red-600 text-white p-4 rounded-xl font-bold">🚀 ส่งขอความช่วยเหลือ</button>
 <div id="debugBox" class="bg-slate-50 border rounded-xl p-2 text-[10px] mt-2"><b>Debug:</b> <span id="debugMsg">พร้อม</span></div>
 </form>
-<div class="mt-4 grid grid-cols-3 gap-2 text-center text-[10px]">
-<a href="tel:1163" class="bg-red-600 text-white p-2 rounded-xl font-bold">🚑 1163</a>
-<a href="tel:074350955" class="bg-slate-900 text-white p-2 rounded-xl">📞 074-350955</a>
-<a href="tel:1669" class="bg-emerald-600 text-white p-2 rounded-xl">🏥 1669</a>
-</div>
 </div>
 </main>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
 const firebaseConfig = {
   apiKey: "AIzaSyCVzC5QZvu0piiXC7pdkstfAVl7-yLYrRs",
   authDomain: "hatyai-rescue.firebaseapp.com",
@@ -43,98 +36,40 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
 let lat=null,lng=null;
 window.getGPS=()=>{
-  document.getElementById('gpsStatus').innerText='⏳ กำลังดึง GPS...';
-  navigator.geolocation.getCurrentPosition(p=>{
-    lat=p.coords.latitude; lng=p.coords.longitude;
-    document.getElementById('gpsStatus').innerHTML=`✅ ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-    document.getElementById('statusBar').innerText='✅ GPS พร้อม';
-    document.getElementById('debugMsg').innerText='GPS: '+lat+','+lng;
-  },(e)=>{
-    document.getElementById('gpsStatus').innerText='❌ ดึง GPS ไม่ได้: '+e.message;
-    alert('เปิด GPS และอนุญาตตำแหน่งด้วย\n\nต้องใช้ HTTPS ด้วย');
-  },{enableHighAccuracy:true, timeout:10000});
+  document.getElementById('gpsStatus').innerText='⏳ ดึง GPS...';
+  navigator.geolocation.getCurrentPosition(p=>{ lat=p.coords.latitude; lng=p.coords.longitude; document.getElementById('gpsStatus').innerHTML=`✅ ${lat.toFixed(6)}, ${lng.toFixed(6)}`; document.getElementById('debugMsg').innerText='GPS: '+lat+','+lng; },e=>{ document.getElementById('gpsStatus').innerText='❌ '+e.message; },{enableHighAccuracy:true});
 };
-
 function aiAnalyze(t){
-  const s=t.toLowerCase(); let score=0; let sym=[];
-  if(s.match(/หมดสติ|ไม่หายใจ|ไม่รู้สึกตัว/)){score+=100; sym.push('หมดสติ');}
-  if(s.match(/จมน้ำ|ไฟดูด|ถูกไฟดูด/)){score+=90; sym.push('จมน้ำ/ไฟดูด');}
-  if(s.match(/หายใจไม่ออก|แน่นหน้าอก|เหนื่อยหอบ/)){score+=80; sym.push('หายใจลำบาก');}
-  if(s.match(/เลือดออก|ชัก|กระตุก/)){score+=75; sym.push('เลือดออก/ชัก');}
-  if(s.match(/ติดเตียง|ผู้สูงอายุ|คนแก่/)){score+=70; sym.push('ติดเตียง');}
-  if(s.match(/เด็กอ่อน|ทารก|ตั้งครรภ์/)){score+=60; sym.push('เด็กอ่อน/ตั้งครรภ์');}
-  if(s.match(/น้ำท่วม|ติดเกาะ|ติดบ้าน/)){score+=50; sym.push('น้ำท่วม');}
-  if(score>=70) return {label:'แดง - วิกฤต',score,keywords:sym.join(','),triage:'🔴',level:3,advice:'ช่วยทันที'};
-  if(score>=35) return {label:'เหลือง - ปานกลาง',score,keywords:sym.join(','),triage:'🟡',level:2,advice:'30นาที'};
-  return {label:'เขียว - เล็กน้อย',score,keywords:sym.join(','),triage:'🟢',level:1,advice:'2ชม.'};
+  const s=t.toLowerCase(); let score=0;
+  if(s.match(/หมดสติ|ไม่หายใจ/)) score+=100;
+  if(s.match(/จมน้ำ|ไฟดูด/)) score+=90;
+  if(score>=70) return {label:'แดง - วิกฤต', triage:'🔴', level:3, score};
+  if(score>=35) return {label:'เหลือง - ปานกลาง', triage:'🟡', level:2, score};
+  return {label:'เขียว - เล็กน้อย', triage:'🟢', level:1, score};
 }
 window.updateAI=()=>{
   const ai=aiAnalyze(document.getElementById('detail').value);
-  document.getElementById('aiBadge').innerText=`${ai.triage} ${ai.label} (${ai.score})`;
-  document.getElementById('aiBox').innerText=`อาการ: ${ai.keywords||'ทั่วไป'} | ${ai.advice}`;
+  document.getElementById('aiBadge').innerText=`${ai.triage} ${ai.label}`;
+  document.getElementById('aiBox').innerText=`Score ${ai.score}`;
 };
-
+updateAI();
 document.getElementById('rescueForm').addEventListener('submit',async e=>{
   e.preventDefault();
-  const debug = document.getElementById('debugMsg');
-  if(lat===null || lng===null){ alert('❌ กรุณากดปุ่ม 📍 ดึงพิกัด GPS ก่อน'); return; }
-  const btn=document.getElementById('submitBtn'); btn.disabled=true; btn.innerText='⏳ กำลังส่ง...';
-  debug.innerText='กำลังส่งไป Firestore...';
+  if(lat===null){ alert('กด GPS ก่อน'); return; }
+  const btn=document.getElementById('submitBtn'); btn.disabled=true; btn.innerText='⏳ ส่ง...';
+  document.getElementById('debugMsg').innerText='ส่งไป Firestore...';
   try{
-    const detail=document.getElementById('detail').value.trim();
-    const name=document.getElementById('name').value.trim();
-    const phone=document.getElementById('phone').value.trim();
-    if(!name || !phone || !detail){ alert('กรอกข้อมูลให้ครบ'); btn.disabled=false; btn.innerText='🚀 ส่งขอความช่วยเหลือ'; return; }
-    const ai=aiAnalyze(detail);
-    const now = Date.now();
-    const docData={
-      id:'CASE-'+now.toString().slice(-6),
-      name, phone, detail,
-      ai, priority:ai.level, priorityLabel:ai.label,
-      lat: Number(lat), lng: Number(lng),
-      status:'รอช่วยเหลือ',
-      photos: [],
-      createdAt: serverTimestamp(),
-      timestamp: now,
-      createdAtLocal: now,
-      logTime: new Date().toLocaleString('th-TH'),
-      source:'public_fixed_no_storage'
-    };
-    console.log('Sending:', docData);
-    debug.innerText='ส่ง cases...';
-    const ref1 = await addDoc(collection(db,'cases'), docData);
-    debug.innerText='✅ ส่ง cases สำเร็จ ID:'+ref1.id+' กำลังส่ง logs...';
-    try{
-      const ref2 = await addDoc(collection(db,'logs'), docData);
-      debug.innerText='✅ ส่งสำเร็จทั้ง cases และ logs | cases:'+ref1.id+' logs:'+ref2.id;
-    }catch(logErr){
-      console.warn('logs failed but cases ok', logErr);
-      debug.innerText='✅ ส่ง cases สำเร็จ (logs ข้าม): '+ref1.id;
-    }
-    document.getElementById('statusBar').innerText='✅ ส่งสำเร็จ!';
-    document.getElementById('statusBar').className='text-[10px] text-emerald-600 font-bold';
-    alert(`✅ ส่งสำเร็จ!\n\n${ai.triage} ${ai.label}\nรหัส: ${docData.id}\n\nศูนย์บัญชาการได้รับแล้ว + ไซเรนจะดัง`);
-    document.getElementById('rescueForm').reset();
-    lat=null; lng=null;
-    document.getElementById('gpsStatus').innerText='ยังไม่ได้ดึงพิกัด - ต้องกดก่อนส่ง';
-    updateAI();
-  }catch(err){
-    console.error(err);
-    debug.innerText='❌ Error: '+err.code+' - '+err.message;
-    document.getElementById('statusBar').innerText='❌ ส่งไม่สำเร็จ: '+err.code;
-    if(err.code==='permission-denied'){
-      alert('❌ Firestore Rules บล็อก!\n\nไปแก้ที่:\nhttps://console.firebase.google.com/project/hatyai-rescue/firestore/rules\n\nวางกฎ:\nrules_version = \'2\';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /cases/{caseId} {\n      allow create: if true;\n      allow read, update, delete: if request.auth != null;\n    }\n    match /logs/{logId} {\n      allow create: if true;\n      allow read: if request.auth != null;\n    }\n  }\n}\n\nแล้วกด Publish');
-    }else if(err.code==='unavailable'){
-      alert('❌ เน็ตหลุด หรือ Firebase ล่ม ลองใหม่');
-    }else{
-      alert('❌ ส่งไม่สำเร็จ:\n'+err.message+'\n\nเปิด Console (F12) ดูรายละเอียด');
-    }
-  }finally{
-    btn.disabled=false; btn.innerText='🚀 ส่งขอความช่วยเหลือ';
-  }
+    const now=Date.now();
+    const docData={ id:'CASE-'+now.toString().slice(-6), name:document.getElementById('name').value, phone:document.getElementById('phone').value, detail:document.getElementById('detail').value, ai:aiAnalyze(document.getElementById('detail').value), priority:aiAnalyze(document.getElementById('detail').value).level, lat:Number(lat), lng:Number(lng), status:'รอช่วยเหลือ', timestamp:now, createdAt:serverTimestamp(), logTime:new Date().toLocaleString('th-TH') };
+    const ref=await addDoc(collection(db,'cases'), docData);
+    try{ await addDoc(collection(db,'logs'), docData); }catch(_){}
+    document.getElementById('debugMsg').innerText='✅ สำเร็จ ID:'+ref.id;
+    alert('✅ ส่งสำเร็จ! '+docData.id);
+    e.target.reset(); lat=null; document.getElementById('gpsStatus').innerText='ยังไม่ได้ดึง GPS'; updateAI();
+  }catch(err){ document.getElementById('debugMsg').innerText='❌ '+err.code+' '+err.message; alert('ส่งไม่สำเร็จ: '+err.message); }
+  finally{ btn.disabled=false; btn.innerText='🚀 ส่งขอความช่วยเหลือ'; }
 });
 </script>
 </body>
