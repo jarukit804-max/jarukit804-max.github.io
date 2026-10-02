@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <html lang="th">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ศูนย์บัญชาการ - บันทึก พ.ศ. | Hatyai Rescue</title>
+<title>ศูนย์บัญชาการ - บันทึก พ.ศ. + ไซเรน</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<style>body{font-family:'Prompt',sans-serif}#map{height:420px}@keyframes flash{0%,100%{background:#991b1b}50%{background:#ef4444}}.flash{animation:flash 0.5s infinite}</style>
+<style>body{font-family:'Prompt',sans-serif}#map{height:420px}@keyframes flash{0%,100%{background:#991b1b}50%{background:#ef4444}}.flash{animation:flash 0.5s infinite}@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}.shake{animation:shake 0.2s infinite}</style>
 </head>
 <body class="bg-slate-100 min-h-screen">
-<div id="sirenBanner" class="hidden fixed top-0 left-0 right-0 z-50 flash text-white p-4 flex justify-between items-center"><div><b>🚨 เคสใหม่! </b><span id="sirenId"></span> <span id="sirenAI"></span><div id="sirenDetail" class="text-xs"></div></div><button onclick="stopSiren()" class="bg-white text-red-700 px-3 py-1 rounded-full text-xs">หยุด</button></div>
+<div id="sirenBanner" class="hidden fixed top-0 left-0 right-0 z-[100] flash text-white p-4 flex justify-between items-center shadow-2xl"><div class="flex items-center gap-3"><span class="text-2xl shake">🚨</span><div><div class="font-bold">เคสใหม่เข้า! <span id="sirenCaseId"></span> <span id="sirenDate"></span></div><div class="text-xs" id="sirenDetail"></div></div></div><button onclick="stopSiren()" class="bg-white text-red-700 px-4 py-2 rounded-full font-bold text-sm">🔇 หยุดเสียง</button></div>
 
 <header class="bg-slate-900 text-white p-3 flex justify-between items-center sticky top-0 z-40">
-<div><h1 class="font-bold text-sm">🛡️ ศูนย์บัญชาการ - บันทึก พ.ศ.</h1><p class="text-[10px] text-slate-400">บันทึกทุกเคส วันที่ พ.ศ. + เวลาออนไลน์</p><p id="connStatus" class="text-[10px] text-amber-300">⏳ รอ Login...</p><p id="currentDateTime" class="text-[10px] text-sky-300"></p></div>
-<div class="flex gap-2"><button onclick="testSiren()" class="bg-white text-slate-900 px-3 py-1 rounded-full text-[10px]">🔊 ทดสอบ</button><button onclick="createTestCase()" class="bg-amber-500 px-3 py-1 rounded-full text-[10px]">+ เคสทดสอบ</button><button onclick="exportCSV()" class="bg-emerald-600 px-3 py-1 rounded-full text-[10px]">📥 Export CSV พ.ศ.</button><button onclick="logout()" class="bg-slate-700 px-3 py-1 rounded-full text-[10px]">ออก</button></div>
+<div><h1 class="font-bold text-sm">🛡️ ศูนย์บัญชาการ - บันทึก พ.ศ. + ไซเรน</h1><p class="text-[10px] text-slate-400">No orderBy + บันทึก พ.ศ. + เวลาออนไลน์</p><p id="connStatus" class="text-[10px] text-amber-300">⏳ รอ Login</p><p id="currentDateTime" class="text-[10px] text-sky-300"></p></div>
+<div class="flex gap-2 flex-wrap"><button onclick="testSiren()" class="bg-white text-slate-900 px-3 py-1 rounded-full text-[10px] font-bold">🔊 ทดสอบไซเรน</button><button onclick="createTestCase()" class="bg-amber-500 text-slate-900 px-3 py-1 rounded-full text-[10px] font-bold">+ เคสทดสอบ</button><button onclick="exportCSV()" class="bg-emerald-600 text-white px-3 py-1 rounded-full text-[10px] font-bold">📥 CSV พ.ศ.</button><button onclick="logout()" class="bg-slate-700 px-3 py-1 rounded-full text-[10px]">ออก</button></div>
 </header>
 
 <div id="loginBox" class="max-w-md mx-auto mt-20 bg-white p-6 rounded-2xl shadow">
@@ -25,7 +25,7 @@
 <main id="mainContent" class="hidden max-w-7xl mx-auto p-3">
 <div class="bg-yellow-50 border border-yellow-300 rounded-xl p-3 mb-3 text-[11px]">
 <div><b>🔧 Debug:</b> <span id="debugText">รอ...</span></div>
-<div class="mt-1">เคสทั้งหมด: <span id="debugCount">0</span> | Auth: <span id="debugAuth">-</span> | วันนี้: <span id="todayCount">0</span> เคส</div>
+<div class="mt-1">ทั้งหมด: <span id="debugCount">0</span> | วันนี้: <span id="todayCount">0</span> | Auth: <span id="debugAuth">-</span> | เสียง: <span id="sirenStatus">🔊 เปิด</span></div>
 <div id="rawError" class="mt-2 bg-white p-2 rounded border text-[10px] text-red-600 hidden"></div>
 </div>
 
@@ -38,28 +38,13 @@
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-<div class="md:col-span-2 bg-white rounded-2xl border overflow-hidden"><div class="p-3 bg-slate-50 border-b font-bold text-sm flex justify-between"><span>📍 แผนที่เคส Realtime</span><button onclick="stopSiren()" class="bg-red-600 text-white px-2 py-1 rounded-full text-[10px]">หยุดไซเรน</button></div><div id="map"></div></div>
-<div class="bg-white rounded-2xl border flex flex-col h-[460px]"><div class="p-3 border-b font-bold text-sm flex justify-between"><span>📋 เคสล่าสุด (พ.ศ.)</span><span class="text-[10px] bg-emerald-100 px-2 py-0.5 rounded-full">● LIVE</span></div><div id="caseList" class="flex-1 overflow-y-auto p-2 space-y-2"></div></div>
+<div class="md:col-span-2 bg-white rounded-2xl border overflow-hidden"><div class="p-3 bg-slate-50 border-b font-bold text-sm flex justify-between"><span>📍 แผนที่เคส Realtime</span><div class="flex gap-2 items-center text-[10px]"><span>ดัง</span><input id="volume" type="range" min="0.3" max="1" step="0.1" value="1" class="w-16"><button onclick="stopSiren()" class="bg-red-600 text-white px-2 py-1 rounded-full">หยุด</button></div></div><div id="map"></div></div>
+<div class="bg-white rounded-2xl border flex flex-col h-[460px]"><div class="p-3 border-b font-bold text-sm flex justify-between"><span>📋 เคสล่าสุด (พ.ศ.)</span><span id="liveDot" class="text-[10px] bg-emerald-100 px-2 py-0.5 rounded-full">● LIVE</span></div><div id="caseList" class="flex-1 overflow-y-auto p-2 space-y-2"></div></div>
 </div>
 
 <div class="bg-white rounded-2xl border mt-3 p-3">
-<div class="flex justify-between items-center mb-2">
-<h3 class="font-bold text-sm">📜 บันทึกเคสทั้งหมด - วันที่ พ.ศ. + เวลาออนไลน์ (ถาวร)</h3>
-<div class="flex gap-2"><input id="searchDate" type="date" class="border rounded px-2 py-1 text-[11px]" onchange="filterByDate()"><button onclick="clearFilter()" class="bg-slate-100 px-2 py-1 rounded text-[11px]">ล้างกรอง</button></div>
-</div>
-<div class="overflow-auto max-h-[400px]">
-<table class="w-full text-[11px] border-collapse">
-<thead class="bg-slate-100 sticky top-0">
-<tr><th class="p-2 text-left">ลำดับ</th><th class="p-2 text-left">วันที่ พ.ศ.</th><th class="p-2 text-left">เวลา</th><th class="p-2 text-left">วัน</th><th class="p-2 text-left">รหัส</th><th class="p-2 text-left">ชื่อ</th><th class="p-2 text-left">เบอร์</th><th class="p-2 text-left">ระดับ</th><th class="p-2 text-left">รายละเอียด</th><th class="p-2 text-left">พิกัด</th><th class="p-2 text-left">สถานะ</th><th class="p-2 text-left">ระบบออนไลน์</th></tr>
-</thead>
-<tbody id="logTable"></tbody>
-</table>
-</div>
-<div class="mt-2 flex gap-2">
-<button onclick="exportCSV()" class="bg-emerald-600 text-white px-3 py-1 rounded-full text-[11px]">📥 Export CSV พ.ศ.</button>
-<button onclick="exportCSVToday()" class="bg-blue-600 text-white px-3 py-1 rounded-full text-[11px]">📥 Export วันนี้</button>
-<span id="exportInfo" class="text-[10px] text-slate-500"></span>
-</div>
+<h3 class="font-bold text-sm mb-2">📜 บันทึกเคสทั้งหมด - วันที่ พ.ศ. + เวลาออนไลน์ (ถาวร)</h3>
+<div class="overflow-auto max-h-[400px]"><table class="w-full text-[11px] border-collapse"><thead class="bg-slate-100 sticky top-0"><tr><th class="p-2 text-left">ลำดับ</th><th class="p-2 text-left">วันที่ พ.ศ.</th><th class="p-2 text-left">เวลา</th><th class="p-2 text-left">วัน</th><th class="p-2 text-left">รหัส</th><th class="p-2 text-left">ชื่อ</th><th class="p-2 text-left">เบอร์</th><th class="p-2 text-left">ระดับ</th><th class="p-2 text-left">รายละเอียด</th><th class="p-2 text-left">พิกัด</th><th class="p-2 text-left">สถานะ</th><th class="p-2 text-left">ออนไลน์</th></tr></thead><tbody id="logTable"></tbody></table></div>
 </div>
 </main>
 
@@ -81,117 +66,78 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 
-// === ระบบวันที่ พ.ศ. ไทย + เวลาออนไลน์ ===
 function getThaiDateTime() {
   const now = new Date();
   const beYear = now.getFullYear() + 543;
   const months = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
   const monthsShort = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-  
-  const day = now.getDate();
-  const month = now.getMonth();
-  const yearBE = beYear;
-  const hours = String(now.getHours()).padStart(2,'0');
-  const mins = String(now.getMinutes()).padStart(2,'0');
-  const secs = String(now.getSeconds()).padStart(2,'0');
-  
+  const day = now.getDate(); const month = now.getMonth(); const yearBE = beYear;
+  const hours = String(now.getHours()).padStart(2,'0'); const mins = String(now.getMinutes()).padStart(2,'0'); const secs = String(now.getSeconds()).padStart(2,'0');
   return {
-    now: now,
-    timestamp: now.getTime(),
-    iso: now.toISOString(),
-    beYear: yearBE,
-    // วันที่แบบไทยเต็ม
+    now, timestamp: now.getTime(), iso: now.toISOString(), beYear: yearBE,
     thaiFull: `${day} ${months[month]} ${yearBE}`,
-    // วันที่แบบย่อ พ.ศ.
     thaiShort: `${day} ${monthsShort[month]} ${yearBE}`,
-    // วันที่แบบตัวเลข พ.ศ. 02/10/2569
     dateBE: `${String(day).padStart(2,'0')}/${String(month+1).padStart(2,'0')}/${yearBE}`,
-    // เวลา
     time: `${hours}:${mins}:${secs}`,
     timeWithDate: `${String(day).padStart(2,'0')}/${String(month+1).padStart(2,'0')}/${yearBE} ${hours}:${mins}:${secs}`,
-    // Log แบบเต็ม
     logTime: `${day} ${months[month]} ${yearBE} เวลา ${hours}:${mins}:${secs} น.`,
     logTimeShort: `${String(day).padStart(2,'0')}/${String(month+1).padStart(2,'0')}/${yearBE} ${hours}:${mins}`,
-    // สำหรับระบบออนไลน์
     onlineDate: now.toLocaleDateString('th-TH', {year:'numeric', month:'long', day:'numeric'}),
     onlineTime: now.toLocaleTimeString('th-TH'),
     onlineDateTime: now.toLocaleString('th-TH'),
-    // วันในสัปดาห์
     dayName: now.toLocaleDateString('th-TH', {weekday:'long'}),
-    // แยกเก็บ
-    day: day,
-    month: month+1,
-    monthName: months[month],
-    monthShort: monthsShort[month],
-    yearAD: now.getFullYear(),
-    yearBE: yearBE,
-    hours: hours,
-    minutes: mins,
-    seconds: secs
+    day, month: month+1, monthName: months[month], monthShort: monthsShort[month],
+    yearAD: now.getFullYear(), yearBE, hours, minutes: mins, seconds: secs,
+    dateKey: `${yearBE}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`
   };
 }
-
-
-let map=null,markers=null,audioCtx=null,osc=null,gain=null,interval=null,cases=[],firstLoad=true,lastIds=new Set(),unsubscribe=null;
-
-function updateCurrentTime(){
-  const dt = getThaiDateTime();
-  const el = document.getElementById('currentDateTime');
-  if(el) el.innerText = `📅 ${dt.thaiFull} พ.ศ. ${dt.yearBE} | ⏰ ${dt.time} น. | ${dt.dayName}`;
+function timeoutPromise(promise, ms, msg){
+  let tid; const timeout = new Promise((_, rej)=>{ tid=setTimeout(()=>rej(new Error(msg)), ms); });
+  return Promise.race([promise, timeout]).finally(()=>clearTimeout(tid));
 }
-setInterval(updateCurrentTime, 1000);
-updateCurrentTime();
+
+
+let map=null,markers=null,audioCtx=null,osc=null,gain=null,sirenInterval=null,sirenEnabled=true,isSirenPlaying=false,cases=[],firstLoad=true,lastIds=new Set(),unsubscribe=null;
 
 function initAudio(){ try{ if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==='suspended') audioCtx.resume(); }catch(e){} }
-function playSiren(critical){
-  try{
-    initAudio(); stopSiren();
-    gain=audioCtx.createGain(); gain.gain.value=0.9; gain.connect(audioCtx.destination);
-    osc=audioCtx.createOscillator(); osc.type='sawtooth'; osc.connect(gain); osc.start();
-    let f=600,dir=1; interval=setInterval(()=>{ f+=dir*(critical?130:70); if(f>1600){f=1600;dir=-1;} if(f<500){f=500;dir=1;} try{osc.frequency.value=f;}catch(e){} },40);
-    document.getElementById('sirenBanner').classList.remove('hidden');
-    setTimeout(stopSiren,20000);
-  }catch(e){ document.getElementById('sirenBanner').classList.remove('hidden'); }
+function playSiren(isCritical=false){
+ if(!sirenEnabled) return; initAudio(); stopSiren(); isSirenPlaying=true;
+ const vol=parseFloat(document.getElementById('volume')?.value||'1');
+ gain=audioCtx.createGain(); gain.gain.value=vol; gain.connect(audioCtx.destination);
+ osc=audioCtx.createOscillator(); osc.type='sawtooth'; osc.connect(gain); osc.start();
+ let freq=600,dir=1; sirenInterval=setInterval(()=>{ freq+=dir*(isCritical?120:70); if(freq>1600){freq=1600;dir=-1;} if(freq<500){freq=500;dir=1;} try{osc.frequency.value=freq;}catch(e){} },28);
+ setTimeout(()=>{ if(isSirenPlaying) stopSiren(); }, isCritical?25000:15000);
+ document.getElementById('sirenBanner').classList.remove('hidden');
+ if(navigator.vibrate) navigator.vibrate([600,200,600,200,1000,200,600]);
 }
-window.stopSiren=()=>{ if(interval) clearInterval(interval); try{osc&&osc.stop();}catch(e){} document.getElementById('sirenBanner').classList.add('hidden'); };
-window.testSiren=()=>{ document.getElementById('sirenId').innerText='TEST'; document.getElementById('sirenAI').innerText='🔴 ทดสอบ'; playSiren(true); };
+window.stopSiren=()=>{ isSirenPlaying=false; if(sirenInterval){clearInterval(sirenInterval);sirenInterval=null;} try{ if(osc){osc.stop();osc=null;} }catch(e){} if(gain){gain.disconnect();gain=null;} document.getElementById('sirenBanner').classList.add('hidden'); };
+window.testSiren=()=>{ document.getElementById('sirenCaseId').innerText='TEST'; document.getElementById('sirenDate').innerText='ทดสอบ'; document.getElementById('sirenDetail').innerText='ทดสอบไซเรนดัง'; playSiren(true); };
+
+function updateCurrentTime(){
+  const dt=getThaiDateTime();
+  const el=document.getElementById('currentDateTime');
+  if(el) el.innerText=`📅 ${dt.thaiFull} พ.ศ. ${dt.yearBE} | ⏰ ${dt.time} น.`;
+}
+setInterval(updateCurrentTime,1000); updateCurrentTime();
 
 window.createTestCase=async()=>{
   try{
-    const dt = getThaiDateTime();
-    const now = dt.timestamp;
+    const dt=getThaiDateTime();
     const docData={ 
-      id:'TEST-'+now.toString().slice(-6), 
-      name:'ทดสอบระบบ', 
-      phone:'0812345678', 
-      detail:'ทดสอบ หมดสติ จมน้ำ - ทดสอบระบบ พ.ศ.',
-      ai:{label:'แดง - วิกฤต', triage:'🔴', level:3}, 
-      priority:3, 
-      lat:7.008+(Math.random()-0.5)*0.05, 
-      lng:100.4747+(Math.random()-0.5)*0.05, 
-      status:'รอช่วยเหลือ', 
-      timestamp:now, 
-      createdAt:serverTimestamp(),
-      dateBE: dt.dateBE,
-      timeBE: dt.time,
-      dateTimeBE: dt.timeWithDate,
-      thaiFull: dt.thaiFull,
-      thaiShort: dt.thaiShort,
-      logTime: dt.logTime,
-      logTimeShort: dt.logTimeShort,
-      day: dt.day, month: dt.month, yearBE: dt.yearBE, dayName: dt.dayName,
-      onlineDateTime: dt.onlineDateTime,
-      dateKey: `${dt.yearBE}-${String(dt.month).padStart(2,'0')}-${String(dt.day).padStart(2,'0')}`
+      id:'TEST-'+dt.timestamp.toString().slice(-6), name:'ทดสอบระบบ', phone:'0812345678',
+      detail:'ทดสอบ หมดสติ จมน้ำ - ไซเรนต้องดัง', ai:{label:'แดง - วิกฤต', triage:'🔴', level:3}, priority:3,
+      lat:7.008+(Math.random()-0.5)*0.05, lng:100.4747+(Math.random()-0.5)*0.05, status:'รอช่วยเหลือ',
+      timestamp:dt.timestamp, createdAt:serverTimestamp(), dateBE:dt.dateBE, timeBE:dt.time, thaiShort:dt.thaiShort,
+      logTime:dt.logTime, onlineDateTime:dt.onlineDateTime, yearBE:dt.yearBE, month:dt.month, day:dt.day,
+      dayName:dt.dayName, dateKey:dt.dateKey
     };
     const r=await addDoc(collection(db,'cases'), docData);
     await addDoc(collection(db,'logs'), docData);
-    alert('✅ สร้างเคสทดสอบ: '+r.id+' | '+dt.logTimeShort);
-  }catch(e){ alert('สร้างไม่สำเร็จ: '+e.message); }
+    alert('✅ เคสทดสอบ: '+r.id+' | '+dt.logTimeShort+' | ไซเรนจะดัง');
+  }catch(e){ alert(e.message); }
 };
 
-window.login=async()=>{
-  try{ await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value); }catch(e){ document.getElementById('loginError').innerText=e.message; }
-};
+window.login=async()=>{ try{ await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value); }catch(e){ document.getElementById('loginError').innerText=e.message; } };
 window.logout=()=>{ if(unsubscribe) unsubscribe(); signOut(auth); };
 
 onAuthStateChanged(auth,user=>{
@@ -218,60 +164,36 @@ function initMap(){
 function listenCases(){
   const debugText=document.getElementById('debugText');
   const rawError=document.getElementById('rawError');
-  debugText.innerText='กำลังเชื่อมต่อ Firestore (บันทึก พ.ศ.)...';
-  
-  const colRef = collection(db,'cases');
-  
-  unsubscribe = onSnapshot(colRef, (snap)=>{
+  debugText.innerText='เชื่อมต่อ Firestore (No orderBy) + ไซเรนเปิด...';
+  const colRef=collection(db,'cases');
+  if(unsubscribe) try{unsubscribe();}catch(e){}
+  unsubscribe=onSnapshot(colRef, (snap)=>{
+    const prev=cases.length;
     cases=snap.docs.map(d=>({fid:d.id, ...d.data()})).sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
-    const dt = getThaiDateTime();
-    const todayKey = `${dt.yearBE}-${String(dt.month).padStart(2,'0')}-${String(dt.day).padStart(2,'0')}`;
-    const todayCases = cases.filter(c=>c.dateKey===todayKey);
-    
-    debugText.innerText=`✅ เชื่อมต่อสำเร็จ! พบ ${cases.length} เคส | วันนี้ ${todayCases.length} เคส | ${dt.logTimeShort}`;
+    const dt=getThaiDateTime();
+    const todayKey=dt.dateKey;
+    const todayCases=cases.filter(c=>c.dateKey===todayKey);
+    debugText.innerText=`✅ เชื่อมต่อสำเร็จ! พบ ${cases.length} เคส | วันนี้ ${todayCases.length} | ${dt.logTimeShort}`;
     document.getElementById('debugCount').innerText=cases.length;
     document.getElementById('todayCount').innerText=todayCases.length;
     document.getElementById('countToday').innerText=todayCases.length;
-    document.getElementById('connStatus').innerText=`🟢 LIVE - ${cases.length} เคส | ${dt.thaiShort}`;
-    rawError.classList.add('hidden');
-    
-    if(!firstLoad && cases.length>lastIds.size){
+    if(!firstLoad && cases.length>prev){
       const newOnes=cases.filter(c=>!lastIds.has(c.fid));
       if(newOnes.length>0){
         const n=newOnes[0];
-        document.getElementById('sirenId').innerText=n.id||'';
-        document.getElementById('sirenAI').innerText=(n.ai?.triage||'🚨')+' '+(n.ai?.label||'');
-        document.getElementById('sirenDetail').innerText=(n.detail||'').slice(0,100)+' | '+ (n.thaiShort||'')+' '+(n.timeBE||'');
+        document.getElementById('sirenCaseId').innerText=n.id||'';
+        document.getElementById('sirenDate').innerText=(n.dateBE||'')+' '+(n.timeBE||'');
+        document.getElementById('sirenDetail').innerText=(n.detail||'').slice(0,120);
         playSiren(n.priority===3);
       }
     }
-    firstLoad=false;
-    lastIds=new Set(cases.map(c=>c.fid));
-    render();
-  }, (err)=>{
-    debugText.innerText='❌ Error: '+err.code;
+    firstLoad=false; lastIds=new Set(cases.map(c=>c.fid)); render();
+  }, err=>{
+    debugText.innerText='❌ '+err.code;
     rawError.innerText=err.code+' - '+err.message;
     rawError.classList.remove('hidden');
   });
 }
-
-let filteredCases = null;
-window.filterByDate=()=>{
-  const input=document.getElementById('searchDate').value;
-  if(!input){ filteredCases=null; renderLog(); return; }
-  const [y,m,d] = input.split('-');
-  const beYear = parseInt(y)+543;
-  const key = `${beYear}-${m}-${d}`;
-  filteredCases = cases.filter(c=>c.dateKey===key || (c.dateBE && c.dateBE.includes(`${d}/${m}/${beYear}`)));
-  renderLog();
-  document.getElementById('exportInfo').innerText=`กรอง: ${d}/${m}/${beYear} พบ ${filteredCases.length} เคส`;
-};
-window.clearFilter=()=>{
-  document.getElementById('searchDate').value='';
-  filteredCases=null;
-  renderLog();
-  document.getElementById('exportInfo').innerText='';
-};
 
 function render(){
   document.getElementById('countAll').innerText=cases.length;
@@ -279,61 +201,35 @@ function render(){
   document.getElementById('countYellow').innerText=cases.filter(c=>c.priority===2).length;
   document.getElementById('countGreen').innerText=cases.filter(c=>c.priority===1).length;
   if(markers) markers.clearLayers();
-  const list=document.getElementById('caseList');
-  if(!list) return;
-  list.innerHTML='';
-  if(cases.length===0){ list.innerHTML='<p class="text-xs text-center py-10 text-slate-400">ยังไม่มีเคส<br>กด + เคสทดสอบ</p>'; renderLog(); return; }
+  const list=document.getElementById('caseList'); const log=document.getElementById('logTable');
+  if(!list) return; list.innerHTML=''; if(log) log.innerHTML='';
+  if(cases.length===0){ list.innerHTML='<p class="text-xs text-center py-10 text-slate-400">ยังไม่มีเคส</p>'; return; }
   cases.slice(0,20).forEach(c=>{
     const color=c.priority===3?'red':c.priority===2?'orange':'green';
-    if(map && markers && c.lat && c.lng) L.circleMarker([c.lat,c.lng],{radius:c.priority===3?14:10,color,fillOpacity:0.8}).addTo(markers).bindPopup(`<b>${c.name}</b><br>${c.phone}<br>${c.dateBE||''} ${c.timeBE||''}<br>${c.detail}`);
+    if(map&&markers&&c.lat&&c.lng) L.circleMarker([c.lat,c.lng],{radius:c.priority===3?14:10,color,fillOpacity:0.8}).addTo(markers).bindPopup(`<b>${c.name}</b><br>${c.phone}<br>${c.dateBE||''} ${c.timeBE||''}<br>${c.detail}`);
     const card=document.createElement('div'); card.className='p-2 border rounded-xl bg-slate-50 text-xs';
     card.innerHTML=`<div class="flex justify-between"><b>${c.name||'-'}</b><span class="text-[10px] px-2 py-0.5 rounded-full ${c.priority===3?'bg-red-100 text-red-700':'bg-slate-100'}">${c.ai?.triage||''} ${c.ai?.label||''}</span></div><div class="text-[10px] text-slate-500">📅 ${c.dateBE||c.thaiShort||'-'} ${c.timeBE||''} | ${c.dayName||''} | 📞 ${c.phone}</div><div class="bg-white p-1 rounded border mt-1">${(c.detail||'').slice(0,120)}</div><div class="flex gap-2 mt-2"><button onclick="updateStatus('${c.fid}','กำลังไปช่วย')" class="text-amber-600">🚤 ไปช่วย</button><button onclick="updateStatus('${c.fid}','เสร็จแล้ว')" class="text-emerald-600">✅ เสร็จ</button></div>`;
     list.appendChild(card);
   });
-  renderLog();
-}
-
-function renderLog(){
-  const log=document.getElementById('logTable');
-  if(!log) return;
-  log.innerHTML='';
-  const data = filteredCases!==null ? filteredCases : cases;
+  const data=cases;
   data.forEach((c,i)=>{
     const tr=document.createElement('tr'); tr.className='border-b hover:bg-slate-50';
-    tr.innerHTML=`<td class="p-2">${i+1}</td><td class="p-2 font-bold text-blue-700">${c.dateBE||c.thaiShort||'-'}</td><td class="p-2 font-mono">${c.timeBE||c.hours+':'+c.minutes||'-'}</td><td class="p-2">${c.dayName||'-'}</td><td class="p-2 font-mono text-[10px]">${c.id||''}</td><td class="p-2">${c.name||''}</td><td class="p-2">${c.phone||''}</td><td class="p-2">${c.ai?.triage||''} ${c.ai?.label||''}</td><td class="p-2 max-w-[200px] truncate">${c.detail||''}</td><td class="p-2"><a href="https://maps.google.com/?q=${c.lat},${c.lng}" target="_blank" class="text-blue-600 underline">${c.lat?.toFixed(4)||''},${c.lng?.toFixed(4)||''}</a></td><td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] ${c.status==='เสร็จแล้ว'?'bg-emerald-100':c.status==='กำลังไปช่วย'?'bg-amber-100':'bg-red-100'}">${c.status||''}</span></td><td class="p-2 text-[10px] text-slate-500">${c.onlineDateTime||c.logTime||''}</td>`;
+    tr.innerHTML=`<td class="p-2">${i+1}</td><td class="p-2 font-bold text-blue-700">${c.dateBE||c.thaiShort||'-'}</td><td class="p-2 font-mono">${c.timeBE||'-'}</td><td class="p-2">${c.dayName||'-'}</td><td class="p-2 font-mono text-[10px]">${c.id||''}</td><td class="p-2">${c.name||''}</td><td class="p-2">${c.phone||''}</td><td class="p-2">${c.ai?.triage||''} ${c.ai?.label||''}</td><td class="p-2 max-w-[200px] truncate">${c.detail||''}</td><td class="p-2"><a href="https://maps.google.com/?q=${c.lat},${c.lng}" target="_blank" class="text-blue-600 underline">${c.lat?.toFixed(4)||''}</a></td><td class="p-2">${c.status||''}</td><td class="p-2 text-[10px]">${c.onlineDateTime||c.logTime||''}</td>`;
     log.appendChild(tr);
   });
 }
 
-window.updateStatus=async(fid,status)=>{ try{ await updateDoc(doc(db,'cases',fid),{status, updatedAt: new Date().toISOString()}); }catch(e){ alert(e.message); } };
-
+window.updateStatus=async(fid,status)=>{ try{ await updateDoc(doc(db,'cases',fid),{status}); }catch(e){ alert(e.message); } };
 window.exportCSV=()=>{
   if(cases.length===0){ alert('ไม่มีข้อมูล'); return; }
-  const dt = getThaiDateTime();
-  let csv='ลำดับ,วันที่ พ.ศ.,เวลา,วัน,รหัสเคส,ชื่อ,เบอร์โทร,ระดับ,รายละเอียด,ละติจูด,ลองจิจูด,สถานะ,วันที่ระบบออนไลน์,เวลาระบบออนไลน์,ปี พ.ศ.,เดือน,อำเภอ\n';
-  cases.forEach((c,i)=>{
-    const safeDetail = (c.detail||'').replace(/"/g,'""');
-    csv+=`${i+1},"${c.dateBE||''}","${c.timeBE||''}","${c.dayName||''}","${c.id||''}","${c.name||''}","${c.phone||''}","${c.ai?.label||c.priorityLabel||''}","${safeDetail}","${c.lat||''}","${c.lng||''}","${c.status||''}","${c.onlineDate||''}","${c.onlineTime||''}","${c.yearBE||''}","${c.monthName||''}","หาดใหญ่"\n`;
-  });
+  const dt=getThaiDateTime();
+  let csv='ลำดับ,วันที่ พ.ศ.,เวลา,วัน,รหัสเคส,ชื่อ,เบอร์,ระดับ,รายละเอียด,ละติจูด,ลองจิจูด,สถานะ,ออนไลน์\n';
+  cases.forEach((c,i)=>{ csv+=`${i+1},"${c.dateBE}","${c.timeBE}","${c.dayName}","${c.id}","${c.name}","${c.phone}","${c.ai?.label}","${c.detail.replace(/"/g,'""')}","${c.lat}","${c.lng}","${c.status}","${c.onlineDateTime}"\n`; });
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`hatyai_rescue_ทุกเคส_${dt.dateBE.replace(/\//g,'-')}_${dt.time.replace(/:/g,'-')}.csv`; a.click();
-  document.getElementById('exportInfo').innerText=`Export ${cases.length} เคส เมื่อ ${dt.logTime}`;
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`hatyai_${dt.dateBE.replace(/\//g,'-')}.csv`; a.click();
 };
 
-window.exportCSVToday=()=>{
-  const dt = getThaiDateTime();
-  const todayKey = `${dt.yearBE}-${String(dt.month).padStart(2,'0')}-${String(dt.day).padStart(2,'0')}`;
-  const todayCases = cases.filter(c=>c.dateKey===todayKey);
-  if(todayCases.length===0){ alert('วันนี้ยังไม่มีเคส'); return; }
-  let csv='ลำดับ,วันที่ พ.ศ.,เวลา,รหัสเคส,ชื่อ,เบอร์,ระดับ,รายละเอียด,พิกัด,สถานะ,ระบบออนไลน์\n';
-  todayCases.forEach((c,i)=>{
-    csv+=`${i+1},"${c.dateBE}","${c.timeBE}","${c.id}","${c.name}","${c.phone}","${c.ai?.label}","${c.detail.replace(/"/g,'""')}","${c.lat},${c.lng}","${c.status}","${c.onlineDateTime}"\n`;
-  });
-  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`hatyai_rescue_วันนี้_${dt.dateBE.replace(/\//g,'-')}.csv`; a.click();
-};
-
-document.addEventListener('click',()=>{initAudio();},{once:true});
+document.addEventListener('click',()=>{ initAudio(); },{once:true});
 </script>
 </body>
 </html>
